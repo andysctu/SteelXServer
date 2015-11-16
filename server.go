@@ -17,12 +17,14 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/andysctu/iMND2/services"
 	_ "github.com/lib/pq"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"reflect"
 	"sync"
 	"time"
 )
@@ -34,6 +36,7 @@ type comment struct {
 }
 
 const dataFile = "./comments.json"
+const contactInfoFile = "./contactInfo.json"
 
 var commentMutex = new(sync.Mutex)
 
@@ -101,20 +104,31 @@ func handleComments(w http.ResponseWriter, r *http.Request) {
 }
 
 // Handle comments
-func handleUsers(w http.ResponseWriter, r *http.Request) {
+func handleContactInfo(w http.ResponseWriter, r *http.Request) {
+	// Stat the file, so we can find its current permissions
+	// fi, err := os.Stat(contactInfoFile)
+	// if err != nil {
+	// 	http.Error(w, fmt.Sprintf("Unable to stat the data file (%s): %s", dataFile, err), http.StatusInternalServerError)
+	// 	return
+	// }
+
+	// Read the comments from the file.
+	contactInfo, err := ioutil.ReadFile(contactInfoFile)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Unable to read the data file (%s): %s", contactInfoFile, err), http.StatusInternalServerError)
+		return
+	}
+
 	switch r.Method {
 	case "POST":
 
-		w.Header().Set("Content-Type", "application/json")
-		w.Header().Set("Cache-Control", "no-cache")
-		//io.Copy(w, bytes.NewReader(commentData))
-
 	case "GET":
-		w.Header().Set("Content-Type", "application/json")
-		w.Header().Set("Cache-Control", "no-cache")
-		// stream the contents of the file to the response
-		//io.Copy(w, bytes.NewReader(commentData))
-
+		var contactInfoMap map[string]string
+		err = json.Unmarshal(contactInfo, &contactInfoMap)
+		if err != nil {
+			log.Println(err)
+		}
+		SendResponse(w, 200, contactInfoMap)
 	default:
 		// Don't know the method, so error
 		http.Error(w, fmt.Sprintf("Unsupported method: %s", r.Method), http.StatusMethodNotAllowed)
@@ -129,6 +143,38 @@ func initDB() *sql.DB {
 	return db
 }
 
+func SendResponse(w http.ResponseWriter, status int, resp interface{}) {
+	val := reflect.ValueOf(resp)
+
+	if err, ok := val.Interface().(error); ok {
+		SendStringResponse(w, status, err.Error())
+		return
+	}
+
+	fmt.Printf("Sending: %v\n", resp)
+	switch resp := resp.(type) {
+	case string:
+		SendStringResponse(w, status, resp)
+	default:
+		bytes, _ := json.Marshal(resp)
+		SendJsonResponse(w, status, string(bytes))
+	}
+
+}
+
+func SendJsonResponse(w http.ResponseWriter, status int, resp string) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(status)
+	fmt.Fprint(w, resp)
+
+}
+
+func SendStringResponse(w http.ResponseWriter, status int, str string) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(status)
+	fmt.Fprint(w, str)
+}
+
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -139,7 +185,7 @@ func main() {
 	services.InitDBSvc(db)
 
 	http.HandleFunc("/api/comments", handleComments)
-	http.HandleFunc("/users", handleUsers)
+	http.HandleFunc("/contactInfo", handleContactInfo)
 	http.Handle("/", http.FileServer(http.Dir("./")))
 	log.Println("Server started: http://localhost:" + port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))

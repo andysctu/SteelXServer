@@ -1,0 +1,31 @@
+{
+  "name": "imnd2",
+  "version": "1.0.0",
+  "description": "Personal website",
+  "main": "index.js",
+  "dependencies": {
+    "6to5ify": "^4.1.1",
+    "react": "^0.14.2",
+    "watchify": "^3.6.0",
+    "browserify": "^12.0.1"
+  },
+  "devDependencies": {
+    "material-ui": "^0.13.2",
+    "react": "^0.14.2",
+    "react-dom": "^0.14.2",
+    "react-tap-event-plugin": "^0.2.1"
+  },
+  "scripts": {
+    "watch": "watchify -t 6to5ify ./src/app.jsx -o ./dist/bundle.js -v"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andysctu/iMND2.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/andysctu/iMND2/issues"
+  },
+  "homepage": "https://github.com/andysctu/iMND2#readme"
+}
