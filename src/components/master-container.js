@@ -3,9 +3,7 @@ import Header from '../components/header'
 import BodyContainer from '../components/body-container'
 import AppBar from 'material-ui/lib/app-bar'
 import TabsComponent from '../components/tabs'
-//import ReactCSSTransitionGroup from 'react-addons/lib/ReactCSSTransitionGroup'
-
-var ReactCSSTransitionGroup = require('react-addons-css-transition-group');
+import ReactCSSTransitionGroup from 'react-addons-css-transition-group'
 
 export default class MasterContainer extends Component {
 	constructor(props) {
@@ -34,18 +32,16 @@ export default class MasterContainer extends Component {
 
 	render() {
 		return (
-			// <div>
-			<ReactCSSTransitionGroup transitionName="example" transitionAppear={false} transitionAppearTimeout={1000} transitionLeaveTimeout={300} transitionEnterTimeout={1000}>
+			
+			<ReactCSSTransitionGroup transitionName="example" transitionAppear={true} transitionAppearTimeout={2000} transitionLeaveTimeout={2000} transitionEnterTimeout={2000}>
           	<div>
           	<Header data={this.state.data}/>
 			<TabsComponent />
-			<audio controls autoPlay hidden>
+			<audio controls hidden>
 			 <source src='../../assets/Yundi-Li-Beethoven-Pathetique-Sonata-2nd-Movement(cut).mp3' type="audio/mp3"/>
 			 Your browser does not support the audio tag.
 			</audio> 
 			</div>
-        	
-			
 			</ReactCSSTransitionGroup>
 			
 

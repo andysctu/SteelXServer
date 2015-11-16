@@ -1,4 +1,5 @@
 import React, {Component} from 'react'
+import CardComponent from '../components/card-component'
 
 export default class CreatePage extends Component {
   constructor(props) {
@@ -6,11 +7,7 @@ export default class CreatePage extends Component {
   }
   render() {
     return (
-      
-      <div>
-      CreatePage
-      </div>
-      
+      <CardComponent/>
     );
   }
 }

@@ -8,7 +8,7 @@ export default class Header extends Component {
 	render() {
 		return (
 			<div className="bg">
-			<Jumbotron style={{paddingLeft:25, marginBottom:0, background:'transparent', textShadow:'black 0.1em 0.1em 0.1em', color:'white', height:350}}>
+			<Jumbotron style={{paddingLeft:35, paddingTop:15, marginBottom:0, background:'transparent', textShadow:'black 0.1em 0.1em 0.1em', color:'white', height:250}}>
 			    <h1>{this.props.data.name}</h1>
 			    <p>{this.props.data.email}<br/>{this.props.data.phone}</p>
 		  	</Jumbotron>
