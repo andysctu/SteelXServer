@@ -1,5 +1,11 @@
 import React, {Component} from 'react'
 import Header from '../components/header'
+import BodyContainer from '../components/body-container'
+import AppBar from 'material-ui/lib/app-bar'
+import TabsComponent from '../components/tabs'
+//import ReactCSSTransitionGroup from 'react-addons/lib/ReactCSSTransitionGroup'
+
+var ReactCSSTransitionGroup = require('react-addons-css-transition-group');
 
 export default class MasterContainer extends Component {
 	constructor(props) {
@@ -28,10 +34,25 @@ export default class MasterContainer extends Component {
 
 	render() {
 		return (
-			<div>
-			<Header data={this.state.data}/>
+			// <div>
+			<ReactCSSTransitionGroup transitionName="example" transitionAppear={false} transitionAppearTimeout={1000} transitionLeaveTimeout={300} transitionEnterTimeout={1000}>
+          	<div>
+          	<Header data={this.state.data}/>
+			<TabsComponent />
+			<audio controls autoPlay hidden>
+			 <source src='../../assets/Yundi-Li-Beethoven-Pathetique-Sonata-2nd-Movement(cut).mp3' type="audio/mp3"/>
+			 Your browser does not support the audio tag.
+			</audio> 
 			</div>
+        	
+			
+			</ReactCSSTransitionGroup>
+			
+
+			
 			
 		);
 	}
 };
+
+//<AppBar title='Hello' style={{backgroundColor:'#283593'}}/>
