@@ -1,0 +1,12 @@
+{
+  "name": "iMND2",
+  "description": "Personal Website",
+  "keywords": [
+    "Andy",
+    "Tu"
+  ],
+  "image": "heroku/go:1.5",
+  "mount_dir": "src/github.com/andysctu/iMND2",
+  "website": "http://github.com/andysctu/iMND2",
+  "repository": "http://github.com/andysctu/iMND2"
+}
