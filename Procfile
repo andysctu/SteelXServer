@@ -1,1 +1,1 @@
-web: iMND2
+web: go run server.go
