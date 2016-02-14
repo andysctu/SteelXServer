@@ -139,7 +139,7 @@ func handleContactInfo(w http.ResponseWriter, r *http.Request) {
 func initDB() *sql.DB {
 	url := os.Getenv("DATABASE_URL")
 	connection, _ := pq.ParseURL(url)
-	connection += " sslmode=require"
+	connection += "&sslmode=require"
 
 	db, err := sql.Open("postgres", connection)
 	// db, err := sql.Open("postgres", "user=andy dbname=postgres sslmode=disable")
