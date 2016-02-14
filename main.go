@@ -138,7 +138,7 @@ func handleContactInfo(w http.ResponseWriter, r *http.Request) {
 func initDB() *sql.DB {
 	db, err := sql.Open("postgres", "user=andy dbname=testDB sslmode=disable")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Error connecting to db: " + err.Error())
 	}
 	return db
 }
@@ -175,6 +175,45 @@ func SendStringResponse(w http.ResponseWriter, status int, str string) {
 	fmt.Fprint(w, str)
 }
 
+struct User {
+	Uid 	 int
+	Username string
+	Password string
+	PilotName string
+}
+
+func LoginHandler(w http.ResponseWriter, r *http.Request) {
+	
+	switch r.Method {
+	case "POST": {
+		username := r.FormValue("username")
+		potentialPassword := r.FormValue("password")
+
+		db := services.GetDB()
+
+		rows, err := db.Query("SELECT password FROM users WHERE username = ?", username)
+		defer rows.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		for rows.Next(){
+			var user User
+			err = rows.Scan(&user)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if (potentialPassword == user.Password){
+				w.WriteHeader(http.StatusOK)
+				return
+			}
+		}
+
+		w.WriteHeader(http.StatusUnauthorized)
+
+	}
+}
+
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -186,6 +225,7 @@ func main() {
 
 	http.HandleFunc("/api/comments", handleComments)
 	http.HandleFunc("/contactInfo", handleContactInfo)
+	http.HandleFunc("/login", LoginHandler)
 	http.Handle("/", http.FileServer(http.Dir("./")))
 	log.Println("Server started: http://localhost:" + port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))

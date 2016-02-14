@@ -1,9 +1,10 @@
 import React, {Component} from 'react'
 import Tabs from 'material-ui/lib/tabs/tabs'
 import Tab from 'material-ui/lib/tabs/tab'
-import WorkPage from '../components/work-page'
-import PlayPage from '../components/play-page'
-import CreatePage from '../components/create-page'
+// import WorkPage from '../components/work-page'
+// import PlayPage from '../components/play-page'
+// import CreatePage from '../components/create-page'
+import Header from '../components/header'
 import SwipeableViews from 'react-swipeable-views'
 
 export default class TabsComponent extends Component {
@@ -45,13 +46,9 @@ export default class TabsComponent extends Component {
       </Tabs>
       <SwipeableViews index={this.state.slideIndex} onChangeIndex={this._handleChangeIndex.bind(this)} style={{height:1000}}>
         
-          <WorkPage />
-        
-        
-          <PlayPage />
-        
-        
-          <CreatePage />
+          <Header data={this.props.data}/>
+          <Header data={this.props.data}/>
+          <Header data={this.props.data}/>
         
       </SwipeableViews>
       </div>

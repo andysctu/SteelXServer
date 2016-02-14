@@ -33,11 +33,12 @@ export default class MasterContainer extends Component {
 	render() {
 		return (
 			
-			<ReactCSSTransitionGroup transitionName="example" transitionAppear={true} transitionAppearTimeout={2000} transitionLeaveTimeout={2000} transitionEnterTimeout={2000}>
+			<ReactCSSTransitionGroup transitionName="example" transitionAppear={true} transitionAppearTimeout={3000} transitionLeaveTimeout={3000} transitionEnterTimeout={2000}>
           	<div>
-          	<Header data={this.state.data}/>
-			<TabsComponent />
-			<audio controls hidden>
+    		<TabsComponent data={this.state.data}/>
+          	
+			
+			<audio controls>
 			 <source src='../../assets/Yundi-Li-Beethoven-Pathetique-Sonata-2nd-Movement(cut).mp3' type="audio/mp3"/>
 			 Your browser does not support the audio tag.
 			</audio> 
