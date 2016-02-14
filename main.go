@@ -17,7 +17,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	_ "github.com/andysctu/iMND2/Godeps/_workspace/src/github.com/lib/pq"
+	// _ "github.com/andysctu/iMND2/Godeps/_workspace/src/github.com/lib/pq"
 	"github.com/andysctu/iMND2/services"
 	"github.com/lib/pq"
 	"io"
