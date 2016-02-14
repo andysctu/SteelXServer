@@ -17,9 +17,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	// _ "github.com/andysctu/iMND2/Godeps/_workspace/src/github.com/lib/pq"
+	_ "github.com/andysctu/iMND2/Godeps/_workspace/src/github.com/lib/pq"
 	"github.com/andysctu/iMND2/services"
-	"github.com/lib/pq"
+	// "github.com/lib/pq"
 	"io"
 	"io/ioutil"
 	"log"
@@ -137,11 +137,7 @@ func handleContactInfo(w http.ResponseWriter, r *http.Request) {
 }
 
 func initDB() *sql.DB {
-	url := os.Getenv("DATABASE_URL")
-	connection, _ := pq.ParseURL(url)
-	connection += "&sslmode=require"
-
-	db, err := sql.Open("postgres", connection)
+	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL")+"&sslmode=require")
 	// db, err := sql.Open("postgres", "user=andy dbname=postgres sslmode=disable")
 	if err != nil {
 		log.Fatal("Error connecting to db: " + err.Error())
