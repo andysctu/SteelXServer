@@ -136,15 +136,6 @@ func handleContactInfo(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func initDB() *sql.DB {
-	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL")+"&sslmode=require")
-	// db, err := sql.Open("postgres", "user=andy dbname=postgres sslmode=disable")
-	if err != nil {
-		log.Fatal("Error connecting to db: " + err.Error())
-	}
-	return db
-}
-
 func SendResponse(w http.ResponseWriter, status int, resp interface{}) {
 	val := reflect.ValueOf(resp)
 
@@ -222,6 +213,18 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 		}
 	}
+}
+
+func initDB() *sql.DB {
+	// url := "postgres://syuanntjlkwjoo:bPkYjz9Q4EUj4_U3rSniAH7ILr@ec2-54-83-53-120.compute-1.amazonaws.com:5432/djk4n55d220oe"
+	url := os.Getenv("DATABASE_URL") + "?sslmode=require"
+	log.Println(url)
+	db, err := sql.Open("postgres", url)
+	// db, err := sql.Open("postgres", testURL)
+	if err != nil {
+		log.Fatal("Error connecting to db: " + err.Error())
+	}
+	return db
 }
 
 func main() {
