@@ -136,7 +136,8 @@ func handleContactInfo(w http.ResponseWriter, r *http.Request) {
 }
 
 func initDB() *sql.DB {
-	db, err := sql.Open("postgres", "user=andy dbname=testDB sslmode=disable")
+	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
+	// db, err := sql.Open("postgres", "user=andy dbname=postgres sslmode=disable")
 	if err != nil {
 		log.Fatal("Error connecting to db: " + err.Error())
 	}
@@ -175,42 +176,50 @@ func SendStringResponse(w http.ResponseWriter, status int, str string) {
 	fmt.Fprint(w, str)
 }
 
-struct User {
-	Uid 	 int
-	Username string
-	Password string
+type User struct {
+	Uid       int
+	Username  string
+	Password  string
 	PilotName string
 }
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
-	
+
 	switch r.Method {
-	case "POST": {
-		username := r.FormValue("username")
-		potentialPassword := r.FormValue("password")
+	case "POST":
+		{
+			// username := r.FormValue("username")
+			potentialPassword := r.FormValue("password")
 
-		db := services.GetDB()
+			// log.Println(username + potentialPassword)
 
-		rows, err := db.Query("SELECT password FROM users WHERE username = ?", username)
-		defer rows.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		for rows.Next(){
-			var user User
-			err = rows.Scan(&user)
+			db := services.GetDB()
+			rows, err := db.Query("SELECT username, password FROM users")
+			// rows, err := db.Query("SELECT users.password FROM users WHERE users.username = ?", username)
+			defer rows.Close()
 			if err != nil {
 				log.Fatal(err)
 			}
-			if (potentialPassword == user.Password){
-				w.WriteHeader(http.StatusOK)
-				return
+
+			for rows.Next() {
+				// var user User
+				var u string
+				var p string
+				err = rows.Scan(&u, &p)
+				if err != nil {
+					// log.Println("here2")
+					log.Fatal(err)
+				}
+				if potentialPassword == p {
+					w.WriteHeader(http.StatusOK)
+					log.Println("success")
+					return
+				}
 			}
+			log.Println("failure")
+			w.WriteHeader(http.StatusUnauthorized)
+
 		}
-
-		w.WriteHeader(http.StatusUnauthorized)
-
 	}
 }
 
