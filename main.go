@@ -1,15 +1,3 @@
-/**
- * This file provided by Facebook is for non-commercial testing and evaluation
- * purposes only. Facebook reserves all rights not expressly granted.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * FACEBOOK BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
- * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
 package main
 
 import (
@@ -18,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	_ "github.com/andysctu/iMND2/Godeps/_workspace/src/github.com/lib/pq"
+	mydb "github.com/andysctu/iMND2/db"
 	"github.com/andysctu/iMND2/services"
 	// "github.com/lib/pq"
 	"io"
@@ -168,56 +157,138 @@ func SendStringResponse(w http.ResponseWriter, status int, str string) {
 	fmt.Fprint(w, str)
 }
 
-type User struct {
-	Uid       int
-	Username  string
-	Password  string
-	PilotName string
-}
-
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
-
+	success := false
+	ret := make(map[string]interface{})
+	db := services.GetDB()
+	var user mydb.User
 	switch r.Method {
 	case "POST":
 		{
-			// username := r.FormValue("username")
 			potentialPassword := r.FormValue("password")
 
-			// log.Println(username + potentialPassword)
+			rows, err := db.Query("SELECT * FROM users") // where ... sql injection
+			if err != nil {
+				log.Fatal(err)
+			}
 
+			if rows.Next() {
+				err = rows.Scan(
+					&user.Uid,
+					&user.Username,
+					&user.Password,
+					&user.PilotName,
+					&user.Level,
+					&user.Rank,
+					&user.Credits,
+				)
+				if err != nil {
+					// log.Println("here2")
+					log.Fatal(err)
+				}
+				if potentialPassword == user.Password {
+					w.WriteHeader(http.StatusOK)
+					log.Println("success")
+					success = true
+					ret["User"] = user
+				}
+			} else {
+				log.Println("failure")
+				w.WriteHeader(http.StatusUnauthorized)
+			}
+			rows.Close()
+
+			if success {
+				rows, err := db.Query("SELECT * FROM mechs WHERE uid = $1 AND isPrimary = true", user.Uid) // sql injection
+
+				defer rows.Close()
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				if rows.Next() {
+					var mech mydb.Mech
+					err = rows.Scan(
+						&mech.Uid,
+						&mech.Arms,
+						&mech.Legs,
+						&mech.Core,
+						&mech.Head,
+						&mech.Weapon1L,
+						&mech.Weapon1R,
+						&mech.Weapon2L,
+						&mech.Weapon2R,
+						&mech.Booster,
+						&mech.IsPrimary,
+					)
+					if err != nil {
+						log.Fatal(err)
+					}
+
+					log.Println(mech)
+
+					ret["Mech"] = mech
+
+					SendResponse(w, http.StatusOK, ret)
+				} else {
+					w.WriteHeader(http.StatusNotFound)
+					log.Println("No mech data for user: " + string(user.Uid))
+				}
+			}
+		}
+	}
+}
+
+func MechHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+		{
+			uid := r.FormValue("uid")
+			log.Println(uid)
 			db := services.GetDB()
-			rows, err := db.Query("SELECT username, password FROM users")
-			// rows, err := db.Query("SELECT users.password FROM users WHERE users.username = ?", username)
+
+			rows, err := db.Query("SELECT * FROM mechs WHERE uid = $1 AND isPrimary = true", uid)
+
 			defer rows.Close()
 			if err != nil {
 				log.Fatal(err)
 			}
 
 			for rows.Next() {
-				// var user User
-				var u string
-				var p string
-				err = rows.Scan(&u, &p)
+				var mech mydb.Mech
+				err = rows.Scan(
+					&mech.Uid,
+					&mech.Arms,
+					&mech.Legs,
+					&mech.Core,
+					&mech.Head,
+					&mech.Weapon1L,
+					&mech.Weapon1R,
+					&mech.Weapon2L,
+					&mech.Weapon2R,
+					&mech.Booster,
+					&mech.IsPrimary,
+				)
 				if err != nil {
-					// log.Println("here2")
 					log.Fatal(err)
 				}
-				if potentialPassword == p {
-					w.WriteHeader(http.StatusOK)
-					log.Println("success")
-					return
-				}
+
+				log.Println(mech)
+
+				SendResponse(w, http.StatusOK, mech)
+				return
+
 			}
-			log.Println("failure")
-			w.WriteHeader(http.StatusUnauthorized)
+
+			w.WriteHeader(http.StatusNotFound)
 
 		}
 	}
 }
 
 func initDB() *sql.DB {
-	// url := "postgres://syuanntjlkwjoo:bPkYjz9Q4EUj4_U3rSniAH7ILr@ec2-54-83-53-120.compute-1.amazonaws.com:5432/djk4n55d220oe"
-	url := os.Getenv("DATABASE_URL") + "?sslmode=require"
+	url := "postgres://syuanntjlkwjoo:bPkYjz9Q4EUj4_U3rSniAH7ILr@ec2-54-83-53-120.compute-1.amazonaws.com:5432/djk4n55d220oe"
+	// url := os.Getenv("DATABASE_URL") + "?sslmode=require"
 	log.Println("DB_URL: " + url)
 	db, err := sql.Open("postgres", url)
 	// db, err := sql.Open("postgres", testURL)
@@ -238,6 +309,7 @@ func main() {
 
 	http.HandleFunc("/api/comments", handleComments)
 	http.HandleFunc("/contactInfo", handleContactInfo)
+	http.HandleFunc("/mech", MechHandler)
 	http.HandleFunc("/login", LoginHandler)
 	http.Handle("/", http.FileServer(http.Dir("./")))
 	log.Println("Server started: http://localhost:" + port)
