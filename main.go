@@ -165,6 +165,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "POST":
 		{
+			log.Println("1")
 			potentialPassword := r.FormValue("password")
 
 			rows, err := db.Query("SELECT * FROM users") // where ... sql injection
@@ -172,6 +173,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 				log.Fatal(err)
 			}
 
+			log.Println("2")
 			if rows.Next() {
 				err = rows.Scan(
 					&user.Uid,
@@ -186,19 +188,23 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 					// log.Println("here2")
 					log.Fatal(err)
 				}
+				log.Println("3")
 				if potentialPassword == user.Password {
+					log.Println("4")
 					w.WriteHeader(http.StatusOK)
 					log.Println("success")
 					success = true
 					ret["User"] = user
 				}
 			} else {
+				log.Println("5")
 				log.Println("failure")
 				w.WriteHeader(http.StatusUnauthorized)
 			}
 			rows.Close()
-
+			log.Println("6")
 			if success {
+				log.Println("7")
 				rows, err := db.Query("SELECT * FROM mechs WHERE uid = $1 AND isPrimary = true", user.Uid) // sql injection
 
 				defer rows.Close()
@@ -224,16 +230,18 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 					if err != nil {
 						log.Fatal(err)
 					}
-
+					log.Println("8")
 					log.Println(mech)
 
 					ret["Mech"] = mech
 
 					SendResponse(w, http.StatusOK, ret)
 				} else {
+					log.Println("9")
 					w.WriteHeader(http.StatusNotFound)
 					log.Println("No mech data for user: " + string(user.Uid))
 				}
+				log.Println("10")
 			}
 		}
 	}
