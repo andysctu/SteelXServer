@@ -189,6 +189,8 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 					log.Fatal(err)
 				}
 				log.Println("3")
+				log.Println("potpass: " + potentialPassword)
+				log.Println("userpas: " + user.Password)
 				if potentialPassword == user.Password {
 					log.Println("4")
 					w.WriteHeader(http.StatusOK)
@@ -200,6 +202,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 				log.Println("5")
 				log.Println("failure")
 				w.WriteHeader(http.StatusUnauthorized)
+				return
 			}
 			rows.Close()
 			log.Println("6")
