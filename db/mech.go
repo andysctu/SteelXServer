@@ -6,10 +6,10 @@ type Mech struct {
 	Legs      string //`json:"legs"`
 	Core      string //`json:"core"`
 	Head      string //`json:"head"`
-	Weapon1L  int    //`json:"weapon1l"`
-	Weapon1R  int    //`json:"weapon1r"`
-	Weapon2L  int    //`json:"weapon2l"`
-	Weapon2R  int    //`json:"weapon2r"`
-	Booster   int    //`json:"booster"`
+	Weapon1L  string //`json:"weapon1l"`
+	Weapon1R  string //`json:"weapon1r"`
+	Weapon2L  string //`json:"weapon2l"`
+	Weapon2R  string //`json:"weapon2r"`
+	Booster   string //`json:"booster"`
 	IsPrimary bool   //`json:"isPrimary"`
 }
