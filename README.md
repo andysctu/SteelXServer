@@ -1,2 +1,2 @@
-# iMND2
-React playground/Future personal website/Temporary SteelX backend server
+# SteelXServer
+React playground/Temporary SteelX backend server
