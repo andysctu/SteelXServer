@@ -165,7 +165,6 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "POST":
 		{
-			log.Println("1")
 			potentialPassword := r.FormValue("password")
 
 			rows, err := db.Query("SELECT * FROM users") // where ... sql injection
@@ -173,7 +172,6 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 				log.Fatal(err)
 			}
 
-			log.Println("2")
 			if rows.Next() {
 				err = rows.Scan(
 					&user.Uid,
@@ -185,67 +183,70 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 					&user.Credits,
 				)
 				if err != nil {
-					// log.Println("here2")
 					log.Fatal(err)
 				}
-				log.Println("3")
-				log.Println("potpass: " + potentialPassword)
-				log.Println("userpas: " + user.Password)
 				if potentialPassword == user.Password {
-					log.Println("4")
-					w.WriteHeader(http.StatusOK)
-					log.Println("success")
 					success = true
 					ret["User"] = user
 				}
-			} else {
-				log.Println("5")
-				log.Println("failure")
+			}
+			rows.Close()
+
+			if !success {
+				log.Printf("Invalid credentials")
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
-			rows.Close()
-			log.Println("6")
-			if success {
-				log.Println("7")
-				rows, err := db.Query("SELECT * FROM mechs WHERE uid = $1 AND isPrimary = true", user.Uid) // sql injection
 
-				defer rows.Close()
+			// Get main Mech
+			rows, err = db.Query("SELECT * FROM mechs WHERE uid = $1 AND isPrimary = true", user.Uid) // sql injection
+
+			defer rows.Close()
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			if rows.Next() {
+				var mech mydb.Mech
+				err = rows.Scan(
+					&mech.Uid,
+					&mech.Arms,
+					&mech.Legs,
+					&mech.Core,
+					&mech.Head,
+					&mech.Weapon1L,
+					&mech.Weapon1R,
+					&mech.Weapon2L,
+					&mech.Weapon2R,
+					&mech.Booster,
+					&mech.IsPrimary,
+				)
 				if err != nil {
 					log.Fatal(err)
 				}
 
-				if rows.Next() {
-					var mech mydb.Mech
-					err = rows.Scan(
-						&mech.Uid,
-						&mech.Arms,
-						&mech.Legs,
-						&mech.Core,
-						&mech.Head,
-						&mech.Weapon1L,
-						&mech.Weapon1R,
-						&mech.Weapon2L,
-						&mech.Weapon2R,
-						&mech.Booster,
-						&mech.IsPrimary,
-					)
-					if err != nil {
-						log.Fatal(err)
-					}
-					log.Println("8")
-					log.Println(mech)
+				ret["Mech"] = mech
 
-					ret["Mech"] = mech
-
-					SendResponse(w, http.StatusOK, ret)
-				} else {
-					log.Println("9")
-					w.WriteHeader(http.StatusNotFound)
-					log.Println("No mech data for user: " + string(user.Uid))
-				}
-				log.Println("10")
+			} else {
+				w.WriteHeader(http.StatusNotFound)
+				log.Println("No mech data for user: " + string(user.Uid))
+				return
 			}
+
+			// Get all equipment owned
+			ret["Owns"] = make([]string, 0)
+			rows, err = db.Query("SELECT name FROM equipment E, owns O, users U WHERE E.eid = O.eid and O.uid = U.uid and U.uid = $1;", user.Uid)
+			for rows.Next() {
+				var part string
+				err = rows.Scan(&part)
+				if err != nil {
+					log.Fatal(err)
+				}
+				ret["Owns"] = append(ret["Owns"].([]string), part)
+			}
+
+			SendResponse(w, http.StatusOK, ret)
+
 		}
 	}
 }
@@ -283,9 +284,6 @@ func MechHandler(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					log.Fatal(err)
 				}
-
-				log.Println(mech)
-
 				SendResponse(w, http.StatusOK, mech)
 				return
 
@@ -312,7 +310,7 @@ func initDB() *sql.DB {
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "3000"
+		port = "3001"
 	}
 
 	db := initDB()
