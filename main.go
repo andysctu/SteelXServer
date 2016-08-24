@@ -167,7 +167,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		{
 			potentialPassword := r.FormValue("password")
 
-			rows, err := db.Query("SELECT * FROM users") // where ... sql injection
+			rows, err := db.Query("SELECT * FROM users WHERE username = $1", r.FormValue("username")) // where ... sql injection
 			if err != nil {
 				log.Fatal(err)
 			}
