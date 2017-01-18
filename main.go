@@ -310,7 +310,7 @@ func MechHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNotFound)
 
 		}
-	case "PUT":
+	case "POST":
 		{
 			for k, v := range r.PostForm {
 				log.Println(k)
@@ -320,6 +320,7 @@ func MechHandler(w http.ResponseWriter, r *http.Request) {
 					continue
 				}
 
+				// Need to check if they own it
 				_, err := db.Exec(fmt.Sprintf("UPDATE mechs SET %s = $1 WHERE uid = $2", k), v[0], uid)
 				if err != nil {
 					log.Println(err)
