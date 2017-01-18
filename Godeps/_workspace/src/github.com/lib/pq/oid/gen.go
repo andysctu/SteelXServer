@@ -11,7 +11,7 @@ import (
 	"os"
 	"os/exec"
 
-	_ "github.com/andysctu/iMND2/Godeps/_workspace/src/github.com/lib/pq"
+	_ "github.com/andysctu/SteelXServer/Godeps/_workspace/src/github.com/lib/pq"
 )
 
 func main() {

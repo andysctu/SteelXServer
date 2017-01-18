@@ -1,5 +1,5 @@
 {
-	"ImportPath": "github.com/andysctu/iMND2",
+	"ImportPath": "github.com/andysctu/SteelXServer",
 	"GoVersion": "go1.5.1",
 	"Deps": [
 		{

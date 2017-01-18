@@ -22,7 +22,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/andysctu/iMND2/Godeps/_workspace/src/github.com/lib/pq/oid"
+	"github.com/andysctu/SteelXServer/Godeps/_workspace/src/github.com/lib/pq/oid"
 )
 
 // Common error types

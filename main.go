@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	_ "github.com/andysctu/iMND2/Godeps/_workspace/src/github.com/lib/pq"
-	mydb "github.com/andysctu/iMND2/db"
-	"github.com/andysctu/iMND2/services"
+	_ "github.com/andysctu/SteelXServer/Godeps/_workspace/src/github.com/lib/pq"
+	mydb "github.com/andysctu/SteelXServer/db"
+	"github.com/andysctu/SteelXServer/services"
 	// "github.com/lib/pq"
 	"io"
 	"io/ioutil"
@@ -157,6 +157,23 @@ func SendStringResponse(w http.ResponseWriter, status int, str string) {
 	fmt.Fprint(w, str)
 }
 
+// func PilotInfoHandler(w http.ResponseWriter, r *http.Request) {
+// 	// ret := make(map[string]interface{})
+// 	// db := services.GetDB()
+// 	uid := r.FormValue("uid")
+// 	log.Println(uid)
+// 	switch r.Method {
+// 	case "PUT":
+// 		{
+// 			for k, v := range r.Form {
+// 				// db.Exec("")
+// 				log.Println(k)
+// 				log.Println(v)
+// 			}
+// 		}
+// 	}
+// }
+
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	success := false
 	ret := make(map[string]interface{})
@@ -252,12 +269,13 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func MechHandler(w http.ResponseWriter, r *http.Request) {
+	uid := r.FormValue("uid")
+	log.Println(uid)
+	db := services.GetDB()
+
 	switch r.Method {
 	case "GET":
 		{
-			uid := r.FormValue("uid")
-			log.Println(uid)
-			db := services.GetDB()
 
 			rows, err := db.Query("SELECT * FROM mechs WHERE uid = $1 AND isPrimary = true", uid)
 
@@ -291,6 +309,54 @@ func MechHandler(w http.ResponseWriter, r *http.Request) {
 
 			w.WriteHeader(http.StatusNotFound)
 
+		}
+	case "PUT":
+		{
+			for k, v := range r.PostForm {
+				log.Println(k)
+				log.Println(v)
+
+				if k == "uid" {
+					continue
+				}
+
+				_, err := db.Exec(fmt.Sprintf("UPDATE mechs SET %s = $1 WHERE uid = $2", k), v[0], uid)
+				if err != nil {
+					log.Println(err)
+				}
+			}
+
+			rows, err := db.Query("SELECT * FROM mechs WHERE uid = $1 AND isPrimary = true", uid)
+
+			defer rows.Close()
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			for rows.Next() {
+				var mech mydb.Mech
+				err = rows.Scan(
+					&mech.Uid,
+					&mech.Arms,
+					&mech.Legs,
+					&mech.Core,
+					&mech.Head,
+					&mech.Weapon1L,
+					&mech.Weapon1R,
+					&mech.Weapon2L,
+					&mech.Weapon2R,
+					&mech.Booster,
+					&mech.IsPrimary,
+				)
+				if err != nil {
+					log.Fatal(err)
+				}
+				SendResponse(w, http.StatusOK, mech)
+				return
+
+			}
+
+			w.WriteHeader(http.StatusNotFound)
 		}
 	}
 }

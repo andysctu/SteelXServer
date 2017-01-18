@@ -22,12 +22,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/andysctu/iMND2.git"
+    "url": "git+https://github.com/andysctu/SteelXServer.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/andysctu/iMND2/issues"
+    "url": "https://github.com/andysctu/SteelXServer/issues"
   },
-  "homepage": "https://github.com/andysctu/iMND2#readme"
+  "homepage": "https://github.com/andysctu/SteelXServer#readme"
 }
