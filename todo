@@ -1,0 +1,56 @@
+todo
+
+Login Scene:
+	Login Callback
+
+Lobby Scene:
+	Stats
+
+GameLobby Scene:
+	Pilot info
+	Map picture
+	Kick
+	Change master
+
+Hangar Scene:
+	Equip W1 and W2
+	Better thumbnails
+
+Gamemodes:
+	deathmatch
+	team deathmatch
+	CTF
+
+GameLobby should have options for host to change
+	- Game mode
+		Deathmatch:
+			- End condition: kills or time
+			- Max kills or max game time
+			- Num players (cannot change to < current # of players)
+			- Map
+
+	- Kick participant
+	- Give host
+
+GUI revamp
+
+Animations:
+	- Strafe walk shooting
+	- Strafe boost shooting
+	- Forward/backward booster shooting: Head/Arms need adjustment
+	- Jumping (start/during/end)
+
+Game Scene:
+	- Game end animation
+	- Transition back to GameLobby
+	- See others on radar
+
+
+Blender how to weight paint
+
+Pose mode select bone
+Click to select body part in to object mode
+Alt tab to weight paint selected bone with selected part
+(T to open Tools tab) Tools -> blend (add/sub)
+
+Selected orange armature, A A to select parts, export as fbx, -Z forward Y up
