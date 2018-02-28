@@ -6,7 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	_ "github.com/andysctu/SteelXServer/Godeps/_workspace/src/github.com/lib/pq"
-	mydb "github.com/andysctu/SteelXServer/db"
+	// mydb "github.com/andysctu/SteelXServer/db"
+	mydb "./db"
 	"github.com/andysctu/SteelXServer/services"
 	// "github.com/lib/pq"
 	"io"
@@ -393,16 +394,25 @@ func PurchaseHandler(w http.ResponseWriter, r *http.Request) {
 
 			var equipment mydb.Equipment
 			if rows.Next() {
-				err = rows.Scan(&equipment)
+				err = rows.Scan(
+					&equipment.Eid,
+					&equipment.Cost,
+					&equipment.Type,
+					&equipment.Name,
+				)
 				if err != nil {
 					log.Fatal(err)
 				}
 			}
 
-			// Get if balance is sufficient
-			if credits < equipment.cost {
+			// Check if balance is sufficient
+			if credits < equipment.Cost {
 				SendResponse(w, http.StatusOK, false)
+				return
 			}
+
+			// Deduct credits
+
 
 			SendResponse(w, http.StatusOK, true)
 		}
