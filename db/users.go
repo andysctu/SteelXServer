@@ -1,11 +1,11 @@
 package db
 
 type User struct {
-	Uid       int
-	Username  string
-	Password  string
-	PilotName string
-	Level     int
-	Rank      string
-	Credits   int
+	Uid       int    //`json:"uid"`
+	Username  string //`json:"username"`
+	Password  string //`json:"password"`
+	PilotName string //`json:"pilotName"`
+	Level     int    //`json:"level"`
+	Rank      string //`json:"rank"`
+	Credits   int    //`json:"credits"`
 }
