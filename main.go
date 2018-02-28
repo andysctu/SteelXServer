@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	_ "github.com/andysctu/SteelXServer/Godeps/_workspace/src/github.com/lib/pq"
-	// mydb "github.com/andysctu/SteelXServer/db"
-	mydb "./db"
+	mydb "github.com/andysctu/SteelXServer/db"
+	// mydb "./db"
 	"github.com/andysctu/SteelXServer/services"
 	// "github.com/lib/pq"
 	"io"
@@ -174,6 +174,19 @@ func SendStringResponse(w http.ResponseWriter, status int, str string) {
 // 		}
 // 	}
 // }
+
+func scanUser(rows *sql.Rows, user mydb.User) (err error) {
+	err = rows.Scan(
+		&user.Uid,
+		&user.Username,
+		&user.Password,
+		&user.PilotName,
+		&user.Level,
+		&user.Rank,
+		&user.Credits,
+	)
+	return err
+}
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	success := false
@@ -381,6 +394,9 @@ func PurchaseHandler(w http.ResponseWriter, r *http.Request) {
 
 			if rows.Next() {
 				err = rows.Scan(&credits)
+				if err != nil {
+					log.Fatal(err)
+				}
 			}
 
 			// Get equipment info
@@ -405,14 +421,36 @@ func PurchaseHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
+			log.Printf("credits: %d, cost: %d\n", credits, equipment.Cost)
+
 			// Check if balance is sufficient
 			if credits < equipment.Cost {
 				SendResponse(w, http.StatusOK, false)
 				return
 			}
 
-			// Deduct credits
+			// Begin atomic db write
+			tx, err := db.Begin()
 
+			// Deduct credits
+			credits -= equipment.Cost
+
+			// Add user ownership of purchased item
+			_, err = tx.Exec("INSERT INTO owns VALUES($1, $2)", uid, eid)
+			if err != nil {
+				log.Println(err)
+				SendResponse(w, http.StatusOK, false)
+				return
+			}
+
+			_, err = tx.Exec("UPDATE users SET credits = $1 WHERE uid = $2", credits, uid)
+			if err != nil {
+				log.Println(err)
+				SendResponse(w, http.StatusOK, false)
+				return
+			}
+
+			tx.Commit()
 
 			SendResponse(w, http.StatusOK, true)
 		}
