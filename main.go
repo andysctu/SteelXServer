@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	_ "github.com/andysctu/SteelXServer/Godeps/_workspace/src/github.com/lib/pq"
-	// mydb "github.com/andysctu/SteelXServer/db"
+	mydb "github.com/andysctu/SteelXServer/db"
 	"github.com/andysctu/SteelXServer/services"
 	// "github.com/lib/pq"
 	"io"
