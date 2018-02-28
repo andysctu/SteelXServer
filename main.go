@@ -175,19 +175,6 @@ func SendStringResponse(w http.ResponseWriter, status int, str string) {
 // 	}
 // }
 
-func scanUser(rows *sql.Rows, user mydb.User) (err error) {
-	err = rows.Scan(
-		&user.Uid,
-		&user.Username,
-		&user.Password,
-		&user.PilotName,
-		&user.Level,
-		&user.Rank,
-		&user.Credits,
-	)
-	return err
-}
-
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	success := false
 	ret := make(map[string]interface{})
@@ -431,6 +418,11 @@ func PurchaseHandler(w http.ResponseWriter, r *http.Request) {
 
 			// Begin atomic db write
 			tx, err := db.Begin()
+			if err != nil {
+				log.Println(err)
+				SendResponse(w, http.StatusOK, false)
+				return
+			}
 
 			// Deduct credits
 			credits -= equipment.Cost
@@ -439,6 +431,7 @@ func PurchaseHandler(w http.ResponseWriter, r *http.Request) {
 			_, err = tx.Exec("INSERT INTO owns VALUES($1, $2)", uid, eid)
 			if err != nil {
 				log.Println(err)
+				tx.Rollback()
 				SendResponse(w, http.StatusOK, false)
 				return
 			}
@@ -446,6 +439,7 @@ func PurchaseHandler(w http.ResponseWriter, r *http.Request) {
 			_, err = tx.Exec("UPDATE users SET credits = $1 WHERE uid = $2", credits, uid)
 			if err != nil {
 				log.Println(err)
+				tx.Rollback()
 				SendResponse(w, http.StatusOK, false)
 				return
 			}
@@ -453,6 +447,102 @@ func PurchaseHandler(w http.ResponseWriter, r *http.Request) {
 			tx.Commit()
 
 			SendResponse(w, http.StatusOK, true)
+		}
+	}
+}
+
+func GameHistoryHandler(w http.ResponseWriter, r *http.Request) {
+	db := services.GetDB()
+	// Need start time, end time, game type, victor
+	// time format: MM/DD/YYYY HH:mm:SS
+	// Need uid, kda of each player, team of each player
+	switch r.Method {
+	case "POST":
+		{
+			start_time := r.FormValue("start_time")
+			end_time := r.FormValue("end_time")
+			game_type := r.FormValue("game_type")
+			victor := r.FormValue("victor")
+
+			layout := "01/02/2006 15:04:05"
+			t1, err := time.Parse(layout, start_time)
+			t2, err := time.Parse(layout, end_time)
+
+			if err != nil {
+			    log.Println(err)
+			}
+
+			durationInSeconds := t2.Sub(t1).Seconds()
+
+			// Record game in game_history table
+			_, err = db.Exec("INSERT INTO game_history (start_time, end_time, game_type, victor) VALUES($1, $2, $3, $4)", start_time, end_time, game_type, victor)
+			if err != nil {
+				log.Println(err)
+				SendResponse(w, http.StatusOK, false)
+				return
+			}
+
+			// Doesn't work for some reason
+			// gid, err := result.LastInsertId()
+			// if err != nil {
+			// 	log.Println(err)
+			// }
+
+			// Get gid
+			rows, err := db.Query("SELECT max(gid) FROM game_history")
+			if err != nil {
+				log.Println(err)
+			}
+
+			var gid int
+			if rows.Next() {
+				err = rows.Scan(&gid)
+				if err != nil {
+					log.Println(err)
+				}
+			}
+
+			// Record individual records in player_history table
+			raw_player_histories := r.FormValue("player_histories")
+
+			byt := []byte(raw_player_histories)
+			var player_histories map[int]interface{}
+			if err := json.Unmarshal(byt, &player_histories); err != nil {
+				panic(err)
+			}
+
+			tx, err := db.Begin()
+			if err != nil {
+				log.Println(err)
+			}
+			for uid, history := range player_histories {
+				history_map := history.(map[string]interface{})
+				kills := history_map["kills"].(float64)
+				deaths := history_map["deaths"].(float64)
+				assists := history_map["assists"].(float64)
+				_, err = tx.Exec("INSERT INTO player_history (gid, uid, kills, deaths, assists, team) VALUES($1, $2, $3, $4, $5, $6)",
+					gid, int64(uid), kills, deaths, assists, history_map["team"].(string))
+				if err != nil {
+					log.Println(err)
+				}
+
+				// Update users personal k/d/a and time_logged
+				fmt.Printf(
+					"UPDATE users SET kills = kills + %f, deaths = deaths + %f, assists = assists + %f, time_logged = time_logged + %f WHERE uid = $1",
+							kills, deaths, assists, durationInSeconds)
+				_, err = tx.Exec(
+					fmt.Sprintf(
+						"UPDATE users SET kills = kills + %f, deaths = deaths + %f, assists = assists + %f, time_logged = time_logged + %f WHERE uid = $1",
+							kills, deaths, assists, durationInSeconds), uid)
+				if err != nil {
+					log.Println(err)
+				}
+			}
+
+			tx.Commit()
+
+			SendResponse(w, http.StatusOK, true)
+			return
 		}
 	}
 }
@@ -483,6 +573,7 @@ func main() {
 	http.HandleFunc("/mech", MechHandler)
 	http.HandleFunc("/login", LoginHandler)
 	http.HandleFunc("/purchase", PurchaseHandler)
+	http.HandleFunc("/game_history", GameHistoryHandler)
 	http.Handle("/", http.FileServer(http.Dir("./")))
 	log.Println("Server started: http://localhost:" + port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
