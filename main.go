@@ -7,6 +7,7 @@ import (
 	"fmt"
 	_ "github.com/andysctu/SteelXServer/Godeps/_workspace/src/github.com/lib/pq"
 	mydb "github.com/andysctu/SteelXServer/db"
+	// mydb "./db"
 	"github.com/andysctu/SteelXServer/services"
 	// "github.com/lib/pq"
 	"io"
@@ -173,6 +174,19 @@ func SendStringResponse(w http.ResponseWriter, status int, str string) {
 // 		}
 // 	}
 // }
+
+func scanUser(rows *sql.Rows, user mydb.User) (err error) {
+	err = rows.Scan(
+		&user.Uid,
+		&user.Username,
+		&user.Password,
+		&user.PilotName,
+		&user.Level,
+		&user.Rank,
+		&user.Credits,
+	)
+	return err
+}
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	success := false
@@ -362,6 +376,87 @@ func MechHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func PurchaseHandler(w http.ResponseWriter, r *http.Request) {
+	uid := r.FormValue("uid")
+	db := services.GetDB()
+
+	switch r.Method {
+	case "POST":
+		{
+			// Get credit balance
+			var credits int
+
+			rows, err := db.Query("SELECT credits FROM users WHERE uid = $1", uid)
+			defer rows.Close()
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			if rows.Next() {
+				err = rows.Scan(&credits)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+
+			// Get equipment info
+			eid := r.FormValue("eid")
+			rows, err = db.Query("SELECT * FROM equipment WHERE eid = $1", eid)
+
+			defer rows.Close()
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			var equipment mydb.Equipment
+			if rows.Next() {
+				err = rows.Scan(
+					&equipment.Eid,
+					&equipment.Cost,
+					&equipment.Type,
+					&equipment.Name,
+				)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+
+			log.Printf("credits: %d, cost: %d\n", credits, equipment.Cost)
+
+			// Check if balance is sufficient
+			if credits < equipment.Cost {
+				SendResponse(w, http.StatusOK, false)
+				return
+			}
+
+			// Begin atomic db write
+			tx, err := db.Begin()
+
+			// Deduct credits
+			credits -= equipment.Cost
+
+			// Add user ownership of purchased item
+			_, err = tx.Exec("INSERT INTO owns VALUES($1, $2)", uid, eid)
+			if err != nil {
+				log.Println(err)
+				SendResponse(w, http.StatusOK, false)
+				return
+			}
+
+			_, err = tx.Exec("UPDATE users SET credits = $1 WHERE uid = $2", credits, uid)
+			if err != nil {
+				log.Println(err)
+				SendResponse(w, http.StatusOK, false)
+				return
+			}
+
+			tx.Commit()
+
+			SendResponse(w, http.StatusOK, true)
+		}
+	}
+}
+
 func initDB() *sql.DB {
 	url := "postgres://syuanntjlkwjoo:bPkYjz9Q4EUj4_U3rSniAH7ILr@ec2-54-83-53-120.compute-1.amazonaws.com:5432/djk4n55d220oe"
 	// url := os.Getenv("DATABASE_URL") + "?sslmode=require"
@@ -387,6 +482,7 @@ func main() {
 	http.HandleFunc("/contactInfo", handleContactInfo)
 	http.HandleFunc("/mech", MechHandler)
 	http.HandleFunc("/login", LoginHandler)
+	http.HandleFunc("/purchase", PurchaseHandler)
 	http.Handle("/", http.FileServer(http.Dir("./")))
 	log.Println("Server started: http://localhost:" + port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
