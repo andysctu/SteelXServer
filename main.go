@@ -199,6 +199,10 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 					&user.Level,
 					&user.Rank,
 					&user.Credits,
+					&user.Kills,
+					&user.Deaths,
+					&user.Assists,
+					&user.TimeLogged,
 				)
 				if err != nil {
 					log.Fatal(err)
@@ -469,7 +473,7 @@ func GameHistoryHandler(w http.ResponseWriter, r *http.Request) {
 			t2, err := time.Parse(layout, end_time)
 
 			if err != nil {
-			    log.Println(err)
+				log.Println(err)
 			}
 
 			durationInSeconds := t2.Sub(t1).Seconds()
@@ -529,11 +533,11 @@ func GameHistoryHandler(w http.ResponseWriter, r *http.Request) {
 				// Update users personal k/d/a and time_logged
 				fmt.Printf(
 					"UPDATE users SET kills = kills + %f, deaths = deaths + %f, assists = assists + %f, time_logged = time_logged + %f WHERE uid = $1",
-							kills, deaths, assists, durationInSeconds)
+					kills, deaths, assists, durationInSeconds)
 				_, err = tx.Exec(
 					fmt.Sprintf(
 						"UPDATE users SET kills = kills + %f, deaths = deaths + %f, assists = assists + %f, time_logged = time_logged + %f WHERE uid = $1",
-							kills, deaths, assists, durationInSeconds), uid)
+						kills, deaths, assists, durationInSeconds), uid)
 				if err != nil {
 					log.Println(err)
 				}
