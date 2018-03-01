@@ -189,7 +189,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.Fatal(err)
 			}
-
+			log.Println(potentialPassword)
 			if rows.Next() {
 				err = rows.Scan(
 					&user.Uid,
@@ -207,6 +207,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					log.Fatal(err)
 				}
+
 				if potentialPassword == user.Password {
 					success = true
 					ret["User"] = user
@@ -247,7 +248,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 					log.Fatal(err)
 				}
 
-				ret["Mech"] = mech
+				ret["Mech"] = []mydb.Mech{mech}
 
 			} else {
 				w.WriteHeader(http.StatusNotFound)
