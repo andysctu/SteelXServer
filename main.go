@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -10,13 +9,10 @@ import (
 	// mydb "./db"
 	"github.com/andysctu/SteelXServer/services"
 	// "github.com/lib/pq"
-	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"reflect"
-	"sync"
 	"time"
 )
 
@@ -405,7 +401,7 @@ func GameHistoryHandler(w http.ResponseWriter, r *http.Request) {
 			raw_player_histories := r.FormValue("player_histories")
 
 			byt := []byte(raw_player_histories)
-			var player_histories map[int]interface{}
+			var player_histories map[string]interface{}
 			if err := json.Unmarshal(byt, &player_histories); err != nil {
 				panic(err)
 			}
@@ -414,13 +410,33 @@ func GameHistoryHandler(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.Println(err)
 			}
-			for uid, history := range player_histories {
+			for name, history := range player_histories {
+				fmt.Printf("looking for %v\n", name)
+				// Get player uid by name
+				rows, err := db.Query("SELECT uid FROM users WHERE username = $1", name)
+
+				var uid int
+				if rows.Next() {
+					err = rows.Scan(&uid)
+					if err != nil {
+						log.Printf("could not find %s in database\n", name)
+						continue
+					}
+				} else {
+					log.Printf("could not find %s in database\n", name)
+					continue
+				}
+
 				history_map := history.(map[string]interface{})
 				kills := history_map["kills"].(float64)
 				deaths := history_map["deaths"].(float64)
 				assists := history_map["assists"].(float64)
+				team := ""
+				if history_map["team"] != nil {
+					team = history_map["team"].(string)
+				}
 				_, err = tx.Exec("INSERT INTO player_history (gid, uid, kills, deaths, assists, team) VALUES($1, $2, $3, $4, $5, $6)",
-					gid, int64(uid), kills, deaths, assists, history_map["team"].(string))
+					gid, int64(uid), kills, deaths, assists, team)
 				if err != nil {
 					log.Println(err)
 				}
