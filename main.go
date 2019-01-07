@@ -348,10 +348,16 @@ func PurchaseHandler(w http.ResponseWriter, r *http.Request) {
 
 func GameHistoryHandler(w http.ResponseWriter, r *http.Request) {
 	db := services.GetDB()
+	switch r.Method {
+
+	case "GET":
+		{
+			uid := getUidByName(r.FormValue("username"))
+			gameIds := getGameIds
+		}
 	// Need start time, end time, game type, victor
 	// time format: MM/DD/YYYY HH:mm:SS
 	// Need uid, kda of each player, team of each player
-	switch r.Method {
 	case "POST":
 		{
 			start_time := r.FormValue("start_time")
@@ -412,18 +418,10 @@ func GameHistoryHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			for name, history := range player_histories {
 				fmt.Printf("looking for %v\n", name)
-				// Get player uid by name
-				rows, err := db.Query("SELECT uid FROM users WHERE username = $1", name)
 
-				var uid int
-				if rows.Next() {
-					err = rows.Scan(&uid)
-					if err != nil {
-						log.Printf("could not find %s in database\n", name)
-						continue
-					}
-				} else {
-					log.Printf("could not find %s in database\n", name)
+				uid := getUidByName(name)
+				if uid == -1 {
+
 					continue
 				}
 
@@ -460,6 +458,20 @@ func GameHistoryHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+}
+
+// Get player uid by name
+func getUidByName(name string) {
+	rows, err := db.Query("SELECT uid FROM users WHERE username = $1", name)
+
+	uid := -1
+	if rows.Next() {
+		_ = rows.Scan(&uid)
+	}
+	if err != nil || uid == -1 {
+		log.Printf("could not find %s in database\n", name)
+	}
+	return uid
 }
 
 func initDB() *sql.DB {
